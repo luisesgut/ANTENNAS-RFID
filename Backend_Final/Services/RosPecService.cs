@@ -91,7 +91,8 @@ namespace Backend_Final.Services
                 },
                 ROSpecStopTrigger = new PARAM_ROSpecStopTrigger
                 {
-                    ROSpecStopTriggerType = ENUM_ROSpecStopTriggerType.Null // Sin trigger de parada
+                    ROSpecStopTriggerType = ENUM_ROSpecStopTriggerType.Null, // Sin trigger de parada
+                    DurationTriggerValue = 0 // No hay límite de duración
                 }
             };
             // Especificar qué antenas usar y con qué protocolo

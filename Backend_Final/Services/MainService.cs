@@ -8,11 +8,15 @@ namespace Backend_Final.Services
     {
         private readonly RfidService _rfidService;
         private readonly RosPecService _rosPecService;
+        private readonly EpcService _epcService;
 
-        public MainService(RfidService rfidService, RosPecService rosPecService)
+        public MainService(RfidService rfidService, RosPecService rosPecService, EpcService epcService)
         {
             _rfidService = rfidService;
             _rosPecService = rosPecService;
+
+            _epcService = new EpcService(3000);
+            _epcService.OnBatchProcessed += OnBatchProcessed;
         }
 
         public void Start()
@@ -22,14 +26,17 @@ namespace Backend_Final.Services
                 // Paso 1: Conectar al lector
                 _rfidService.ConnectLLRP();
 
-                // Paso 2: Configurar evento para recibir reportes de etiquetas
+                // Paso 2: Configurar las antenas
+                _rfidService.ConfigureAntennas();
+
+                // Paso 3: Configurar evento para recibir reportes de etiquetas
                 var reader = _rfidService.GetLLRPClient();
                 reader.OnRoAccessReportReceived += new delegateRoAccessReport(OnReportEvent);
 
-                // Paso 3: Eliminar ROSpecs existentes
+                // Paso 4: Eliminar ROSpecs existentes
                 _rosPecService.Delete_RoSpec();
 
-                // Paso 4: Agregar y habilitar un nuevo ROSpec
+                // Paso 5: Agregar y habilitar un nuevo ROSpec
                 _rosPecService.Add_RoSpec();
                 _rosPecService.Enable_RoSpec();
 
@@ -61,7 +68,6 @@ namespace Backend_Final.Services
             }
         }
 
-        // Evento para manejar reportes de etiquetas
         private void OnReportEvent(MSG_RO_ACCESS_REPORT msg)
         {
             if (msg?.TagReportData == null || msg.TagReportData.Length == 0)
@@ -91,10 +97,22 @@ namespace Backend_Final.Services
                         epc = "Formato de EPC desconocido";
                     }
 
-                    Console.WriteLine($"Etiqueta detectada: EPC = {epc}");
+                    // Agregar el EPC al agregador
+                    _epcService.AddEpc(epc);
                 }
             }
         }
-    
-}
+
+        private void OnBatchProcessed(List<string> epcs)
+        {
+            // Clasificar los EPCs según su longitud
+            var wristbandEpcs = epcs.Where(e => e.Length == 12).ToList(); // Pulseras
+            var palletEpcs = epcs.Where(e => e.Length == 16).ToList(); // Etiquetas normales
+
+            Console.WriteLine($"Pulseras detectadas: {string.Join(", ", wristbandEpcs)}");
+            Console.WriteLine($"Etiquetas en la tarima: {string.Join(", ", palletEpcs)}");
+
+            // Aquí puedes almacenar o procesar los EPCs según el caso de uso
+        }
+    }
 }

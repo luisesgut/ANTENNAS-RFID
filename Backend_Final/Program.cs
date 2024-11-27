@@ -16,6 +16,11 @@ builder.Services.AddSingleton<RfidService>();
 builder.Services.AddSingleton<RosPecService>();
 //agrega main service
 builder.Services.AddSingleton<MainService>();
+
+//agrega EpcService
+builder.Services.AddSingleton(sp => new EpcService(2000)); // 5000 ms como intervalo
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
